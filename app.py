@@ -1,34 +1,52 @@
 import streamlit as st
-import joblib
-import numpy as np
+import pandas as pd
+import pickle
 
-# Load the trained model
-@st.cache(allow_output_mutation=True)
+# Load CSV and Model
+@st.cache_data
+def load_data():
+    data = pd.read_csv('Health_Sleep_Statistics.csv')
+    return data
+
+@st.cache_resource
 def load_model():
-    model = joblib.load('model_joblib.pkl')  # Replace with your actual model path
+    with open('random_forest_model.pkl', 'rb') as f:
+        model = pickle.load(f)
     return model
 
-def main():
-    st.title("Your Project: Predictive Model with Streamlit")
-    
-    # Feature input fields (replace these with actual features)
-    age = st.number_input('Age', min_value=0, max_value=100, value=25)
-    height = st.number_input('Height (cm)', min_value=50, max_value=250, value=170)
-    weight = st.number_input('Weight (kg)', min_value=10, max_value=200, value=70)
-    gender = st.selectbox('Gender', options=['Male', 'Female'])
+# Load data and model
+data = load_data()
+model = load_model()
 
-    # Gender encoding (e.g., Male: 0, Female: 1)
-    gender_encoded = 0 if gender == 'Male' else 1
+# Title
+st.title("Health and Sleep Statistics Predictor")
 
-    # Prepare the input data
-    input_data = np.array([[age, height, weight, gender_encoded]])
+# Show the data
+if st.checkbox("Show data preview"):
+    st.write(data.head())
 
-    # Predict button
-    if st.button('Predict'):
-        model = load_model()  # Load the saved model
-        prediction = model.predict(input_data)  # Make prediction
-        st.success(f"Prediction: {prediction[0]}")
+# User Input for Prediction
+st.header("Input Features for Prediction")
 
-# Run the app
-if __name__ == "__main__":
-    main()
+# Assuming the model uses these features, replace with the actual feature columns from your data
+age = st.number_input("Age", min_value=0, max_value=100, value=30)
+hours_of_sleep = st.slider("Hours of Sleep", min_value=0, max_value=24, value=8)
+exercise_hours = st.number_input("Exercise Hours per Week", min_value=0, max_value=168, value=5)
+
+# You can add more features based on your data
+
+# Prepare input for prediction
+input_features = pd.DataFrame({
+    'Age': [age],
+    'Hours of Sleep': [hours_of_sleep],
+    'Exercise Hours per Week': [exercise_hours]
+})
+
+# Display input data
+st.write("Input Data for Prediction:", input_features)
+
+# Make Prediction
+if st.button("Predict"):
+    prediction = model.predict(input_features)
+    st.write(f"Prediction: {prediction[0]}")
+
